@@ -81,26 +81,10 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionIdListener;
 import javax.servlet.http.HttpSessionListener;
 
-import org.apache.catalina.Authenticator;
-import org.apache.catalina.Container;
-import org.apache.catalina.ContainerListener;
-import org.apache.catalina.Context;
-import org.apache.catalina.CredentialHandler;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Loader;
-import org.apache.catalina.Manager;
-import org.apache.catalina.Pipeline;
-import org.apache.catalina.Realm;
-import org.apache.catalina.ThreadBindingListener;
-import org.apache.catalina.Valve;
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
-import org.apache.catalina.Wrapper;
+import org.apache.catalina.*;
 import org.apache.catalina.deploy.NamingResourcesImpl;
+import org.apache.catalina.dmall.IsolatedEnvironment;
+import org.apache.catalina.loader.ParallelWebappClassLoader;
 import org.apache.catalina.loader.WebappClassLoaderBase;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.session.StandardManager;
@@ -4652,6 +4636,8 @@ public class StandardContext extends ContainerBase implements Context, Notificat
     @Override
     protected void startInternal() throws LifecycleException {
 
+
+
         if (log.isTraceEnabled()) {
             log.trace("Starting " + getBaseName());
         }
@@ -4882,6 +4868,9 @@ public class StandardContext extends ContainerBase implements Context, Notificat
 
             // Set up the context init params
             mergeParameters();
+
+            // Set up env params
+            mergeEnvs();
 
             // Call ServletContainerInitializers
             for (Map.Entry<ServletContainerInitializer,Set<Class<?>>> entry : initializers.entrySet()) {
@@ -6353,5 +6342,32 @@ public class StandardContext extends ContainerBase implements Context, Notificat
         public String getVirtualServerName() {
             return sc.getVirtualServerName();
         }
+    }
+
+    private void mergeEnvs() {
+        Map<String, String> envParams = new HashMap<>();
+        Engine engine = (Engine) this.getParent().getParent();
+        Container[] children = engine.findChildren();
+        for (Container child : children) {
+            String domain = child.getName();
+            Container[] childChildren = child.findChildren();
+            for (Container childChild : childChildren) {
+                if (childChild instanceof StandardContext) {
+                    StandardContext standardContext = (StandardContext)childChild;
+                    String path = standardContext.getPath();
+                    ApplicationParameter[] applicationParameters = standardContext.findApplicationParameters();
+                    for (ApplicationParameter applicationParameter : applicationParameters) {
+                        if (applicationParameter.getName().startsWith("ENV:")) {
+                            envParams.put(domain + path + "_" + applicationParameter.getName().substring(4), applicationParameter.getValue());
+                        }
+                    }
+                }
+            }
+        }
+        if (this.loader.getClassLoader() instanceof ParallelWebappClassLoader) {
+            String domain = this.getParent().getName();
+            ((ParallelWebappClassLoader) this.loader.getClassLoader()).setReadKeyPrefix(domain + this.getPath() + "_");
+        }
+        IsolatedEnvironment.takeover(envParams);
     }
 }

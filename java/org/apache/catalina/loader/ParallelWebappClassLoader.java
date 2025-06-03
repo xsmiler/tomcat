@@ -24,6 +24,8 @@ public class ParallelWebappClassLoader extends WebappClassLoaderBase {
 
     private static final Log log = LogFactory.getLog(ParallelWebappClassLoader.class);
 
+    private String readKeyPrefix;
+
     static {
         boolean result = registerAsParallelCapable();
         if (!result) {
@@ -67,5 +69,13 @@ public class ParallelWebappClassLoader extends WebappClassLoaderBase {
         }
 
         return result;
+    }
+
+    public String getReadKeyPrefix() {
+        return readKeyPrefix;
+    }
+
+    public void setReadKeyPrefix(String readKeyPrefix) {
+        this.readKeyPrefix = readKeyPrefix;
     }
 }
