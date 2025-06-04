@@ -41,7 +41,7 @@ public class MultiBizProperties extends Properties {
 
     private final String                  bizClassLoaderName;
 
-    private static final String           BIZ_CLASS_LOADER = "com.alipay.sofa.ark.container.service.classloader.BizClassLoader";
+    private static final String           BIZ_CLASS_LOADER = "org.apache.catalina.loader.ParallelWebappClassLoader";
 
     private Map<ClassLoader, Set<String>> modifiedKeysMap  = new HashMap<>();
 
@@ -535,7 +535,6 @@ public class MultiBizProperties extends Properties {
             System.setProperties(multiBizProperties);
             return multiBizProperties;
         } else {
-//            ArkLoggerFactory.getDefaultLogger().info("MultiBizProperties had already initialized.");
             return (MultiBizProperties) System.getProperties();
         }
     }

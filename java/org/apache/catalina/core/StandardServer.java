@@ -42,6 +42,7 @@ import org.apache.catalina.Server;
 import org.apache.catalina.Service;
 import org.apache.catalina.deploy.NamingResourcesImpl;
 import org.apache.catalina.mbeans.MBeanFactory;
+import org.apache.catalina.multienv.MultiBizProperties;
 import org.apache.catalina.startup.Catalina;
 import org.apache.catalina.util.ExtensionValidator;
 import org.apache.catalina.util.LifecycleMBeanBase;
@@ -773,6 +774,9 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
         setState(LifecycleState.STARTING);
 
         globalNamingResources.start();
+
+        // 替换默认Properties
+        MultiBizProperties.initSystem();
 
         // Start our defined Services
         synchronized (servicesLock) {

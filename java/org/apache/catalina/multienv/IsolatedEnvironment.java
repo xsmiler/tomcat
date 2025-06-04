@@ -151,6 +151,21 @@ public class IsolatedEnvironment extends AbstractMap<String, String> {
         };
     }
 
+    public static boolean takeovered() {
+        try {
+            Class<?> envClass = Class.forName("java.lang.ProcessEnvironment");
+
+            Field unmodifiableField = envClass.getDeclaredField("theUnmodifiableEnvironment");
+            Map<String, String> unmodifiableEnv = UnsafeUtils.readStaticField(envClass, unmodifiableField);
+            if (unmodifiableEnv instanceof IsolatedEnvironment) {
+                return true;
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to check takeovered isolated environment", e);
+        }
+        return false;
+    }
+
     public static Map<String, String> takeover(String bizClassLoaderName,
                                                Map<String, String> additionalEnv) {
         Objects.requireNonNull(bizClassLoaderName, "bizClassLoaderName");

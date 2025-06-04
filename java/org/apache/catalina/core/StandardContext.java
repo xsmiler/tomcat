@@ -4636,8 +4636,6 @@ public class StandardContext extends ContainerBase implements Context, Notificat
     @Override
     protected void startInternal() throws LifecycleException {
 
-
-
         if (log.isTraceEnabled()) {
             log.trace("Starting " + getBaseName());
         }
@@ -6345,29 +6343,34 @@ public class StandardContext extends ContainerBase implements Context, Notificat
     }
 
     private void mergeEnvs() {
-        Map<String, String> envParams = new HashMap<>();
-        Engine engine = (Engine) this.getParent().getParent();
-        Container[] children = engine.findChildren();
-        for (Container child : children) {
-            String domain = child.getName();
-            Container[] childChildren = child.findChildren();
-            for (Container childChild : childChildren) {
-                if (childChild instanceof StandardContext) {
-                    StandardContext standardContext = (StandardContext)childChild;
-                    String path = standardContext.getPath();
-                    ApplicationParameter[] applicationParameters = standardContext.findApplicationParameters();
-                    for (ApplicationParameter applicationParameter : applicationParameters) {
-                        if (applicationParameter.getName().startsWith("ENV:")) {
-                            envParams.put(domain + path + "_" + applicationParameter.getName().substring(4), applicationParameter.getValue());
+        // only need exec once
+        if (!IsolatedEnvironment.takeovered()) {
+            Map<String, String> envParams = new HashMap<>();
+            Engine engine = (Engine) this.getParent().getParent();
+            Container[] children = engine.findChildren();
+            for (Container child : children) {
+                String domain = child.getName();
+                Container[] childChildren = child.findChildren();
+                for (Container childChild : childChildren) {
+                    if (childChild instanceof StandardContext) {
+                        StandardContext standardContext = (StandardContext)childChild;
+                        String path = standardContext.getPath();
+                        ApplicationParameter[] applicationParameters = standardContext.findApplicationParameters();
+                        for (ApplicationParameter applicationParameter : applicationParameters) {
+                            if (applicationParameter.getName().startsWith("ENV:")) {
+                                envParams.put(domain + path + "_" + applicationParameter.getName().substring(4), applicationParameter.getValue());
+                            }
                         }
                     }
                 }
             }
+
+            IsolatedEnvironment.takeover(envParams);
         }
+        // setup readKeyPrefix value
         if (this.loader.getClassLoader() instanceof ParallelWebappClassLoader) {
             String domain = this.getParent().getName();
             ((ParallelWebappClassLoader) this.loader.getClassLoader()).setReadKeyPrefix(domain + this.getPath() + "_");
         }
-        IsolatedEnvironment.takeover(envParams);
     }
 }
