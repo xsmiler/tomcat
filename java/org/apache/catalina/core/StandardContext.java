@@ -83,7 +83,7 @@ import javax.servlet.http.HttpSessionListener;
 
 import org.apache.catalina.*;
 import org.apache.catalina.deploy.NamingResourcesImpl;
-import org.apache.catalina.dmall.IsolatedEnvironment;
+import org.apache.catalina.multienv.IsolatedEnvironment;
 import org.apache.catalina.loader.ParallelWebappClassLoader;
 import org.apache.catalina.loader.WebappClassLoaderBase;
 import org.apache.catalina.loader.WebappLoader;
