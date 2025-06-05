@@ -83,7 +83,6 @@ import javax.servlet.http.HttpSessionListener;
 
 import org.apache.catalina.*;
 import org.apache.catalina.deploy.NamingResourcesImpl;
-import org.apache.catalina.multienv.IsolatedEnvironment;
 import org.apache.catalina.loader.ParallelWebappClassLoader;
 import org.apache.catalina.loader.WebappClassLoaderBase;
 import org.apache.catalina.loader.WebappLoader;
@@ -4867,8 +4866,8 @@ public class StandardContext extends ContainerBase implements Context, Notificat
             // Set up the context init params
             mergeParameters();
 
-            // Set up env params
-            mergeEnvs();
+            // Set up env readKey prefix
+            setReadKeyPrefix();
 
             // Call ServletContainerInitializers
             for (Map.Entry<ServletContainerInitializer,Set<Class<?>>> entry : initializers.entrySet()) {
@@ -6342,31 +6341,7 @@ public class StandardContext extends ContainerBase implements Context, Notificat
         }
     }
 
-    private void mergeEnvs() {
-        // only need exec once
-        if (!IsolatedEnvironment.takeovered()) {
-            Map<String, String> envParams = new HashMap<>();
-            Engine engine = (Engine) this.getParent().getParent();
-            Container[] children = engine.findChildren();
-            for (Container child : children) {
-                String domain = child.getName();
-                Container[] childChildren = child.findChildren();
-                for (Container childChild : childChildren) {
-                    if (childChild instanceof StandardContext) {
-                        StandardContext standardContext = (StandardContext)childChild;
-                        String path = standardContext.getPath();
-                        ApplicationParameter[] applicationParameters = standardContext.findApplicationParameters();
-                        for (ApplicationParameter applicationParameter : applicationParameters) {
-                            if (applicationParameter.getName().startsWith("ENV:")) {
-                                envParams.put(domain + path + "_" + applicationParameter.getName().substring(4), applicationParameter.getValue());
-                            }
-                        }
-                    }
-                }
-            }
-
-            IsolatedEnvironment.takeover(envParams);
-        }
+    private void setReadKeyPrefix() {
         // setup readKeyPrefix value
         if (this.loader.getClassLoader().getClass().getName().equals("org.apache.catalina.loader.ParallelWebappClassLoader")) {
             String domain = this.getParent().getName();

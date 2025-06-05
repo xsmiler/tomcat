@@ -29,19 +29,18 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessControlException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
 import javax.management.ObjectName;
 
-import org.apache.catalina.Context;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Server;
-import org.apache.catalina.Service;
+import org.apache.catalina.*;
 import org.apache.catalina.deploy.NamingResourcesImpl;
 import org.apache.catalina.mbeans.MBeanFactory;
+import org.apache.catalina.multienv.IsolatedEnvironment;
 import org.apache.catalina.multienv.MultiBizProperties;
 import org.apache.catalina.startup.Catalina;
 import org.apache.catalina.util.ExtensionValidator;
@@ -51,6 +50,7 @@ import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.buf.StringCache;
+import org.apache.tomcat.util.descriptor.web.ApplicationParameter;
 import org.apache.tomcat.util.res.StringManager;
 
 
@@ -778,12 +778,44 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
         // 替换默认Properties
         MultiBizProperties.initSystem();
 
+        // set up envs
+        mergeEnvs();
+
         // Start our defined Services
         synchronized (servicesLock) {
             for (Service service : services) {
                 service.start();
             }
         }
+    }
+
+    private void mergeEnvs() {
+
+        Map<String, String> envParams = new HashMap<>();
+        for (Service service : services) {
+            if (service instanceof StandardService) {
+                StandardService standardService = (StandardService)service;
+                Engine container = standardService.getContainer();
+                Container[] children = container.findChildren();
+                for (Container child : children) {
+                    String domain = child.getName();
+                    Container[] childChildren = child.findChildren();
+                    for (Container childChild : childChildren) {
+                        if (childChild instanceof StandardContext) {
+                            StandardContext standardContext = (StandardContext)childChild;
+                            String path = standardContext.getPath();
+                            ApplicationParameter[] applicationParameters = standardContext.findApplicationParameters();
+                            for (ApplicationParameter applicationParameter : applicationParameters) {
+                                if (applicationParameter.getName().startsWith("ENV:")) {
+                                    envParams.put(domain + path + "_" + applicationParameter.getName().substring(4), applicationParameter.getValue());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        IsolatedEnvironment.takeover(envParams);
     }
 
 
