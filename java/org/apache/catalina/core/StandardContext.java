@@ -6368,7 +6368,7 @@ public class StandardContext extends ContainerBase implements Context, Notificat
             IsolatedEnvironment.takeover(envParams);
         }
         // setup readKeyPrefix value
-        if (this.loader.getClassLoader() instanceof ParallelWebappClassLoader) {
+        if (this.loader.getClassLoader().getClass().getName().equals("org.apache.catalina.loader.ParallelWebappClassLoader")) {
             String domain = this.getParent().getName();
             ((ParallelWebappClassLoader) this.loader.getClassLoader()).setReadKeyPrefix(domain + this.getPath() + "_");
         }
