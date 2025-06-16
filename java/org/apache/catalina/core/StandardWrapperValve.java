@@ -17,17 +17,6 @@
 package org.apache.catalina.core;
 
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.servlet.DispatcherType;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.UnavailableException;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Globals;
@@ -41,6 +30,12 @@ import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.log.SystemLogHandler;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Valve that implements the default basic behavior for the <code>StandardWrapper</code> container implementation.
@@ -132,6 +127,13 @@ final class StandardWrapperValve extends ValveBase {
         }
 
         MessageBytes requestPathMB = request.getRequestPathMB();
+
+        // context path只作用路由，不修改原有请求path
+        String requestPathMBStr = request.getContextPath() + requestPathMB.getString();
+        requestPathMB.setString(requestPathMBStr);
+        request.setPathInfo(requestPathMBStr);
+        request.getMappingData().wrapperPath.setString(requestPathMBStr);
+
         DispatcherType dispatcherType = DispatcherType.REQUEST;
         if (request.getDispatcherType() == DispatcherType.ASYNC) {
             dispatcherType = DispatcherType.ASYNC;
