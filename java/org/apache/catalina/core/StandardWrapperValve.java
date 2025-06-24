@@ -128,11 +128,13 @@ final class StandardWrapperValve extends ValveBase {
 
         MessageBytes requestPathMB = request.getRequestPathMB();
 
-        // context path只作用路由，不修改原有请求path
-        String requestPathMBStr = request.getContextPath() + requestPathMB.getString();
-        requestPathMB.setString(requestPathMBStr);
-        request.setPathInfo(requestPathMBStr);
-        request.getMappingData().wrapperPath.setString(requestPathMBStr);
+        if (servlet.getClass().getName().contains("DispatcherServlet")) {
+            // context path只作用路由，不修改原有请求path
+            String requestPathMBStr = request.getContextPath() + requestPathMB.getString();
+            requestPathMB.setString(requestPathMBStr);
+            request.setPathInfo(requestPathMBStr);
+            request.getMappingData().wrapperPath.setString(requestPathMBStr);
+        }
 
         DispatcherType dispatcherType = DispatcherType.REQUEST;
         if (request.getDispatcherType() == DispatcherType.ASYNC) {
